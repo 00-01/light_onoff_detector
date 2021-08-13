@@ -5,6 +5,7 @@ import pandas as pd
 import tensorflow.keras as k
 import plotly.express as px
 
+Nan = np.nan
 idle = 0
 on = 1
 off = 2
@@ -12,12 +13,9 @@ for file in glob.glob("*.csv"):
     df = pd.read_csv(file)
     basename = os.path.basename(file)
 
-    light_data = df["light"]
-    df = df.assign(average=light_data)
-    df = df.assign(average_filter=light_data)
-    average_filter = df['average_filter']
+    light_data = df["light_data"]
 
-    # make average column
+# make average column
     av = 0
     ave = 0
     for row, now in light_data.iteritems():
@@ -57,27 +55,26 @@ for file in glob.glob("*.csv"):
     min_val = 9
     offset = 2
     threshold = 7.5
-    for row, n in average.iteritems():
+    for row, n in light_data.iteritems():
         r = light_data.loc[row]
         if row > 0:
             r1 = light_data.loc[row - 1]
             n1 = average.loc[row - 1]
         if abs(r - r1) < min_val:
-            df.loc[row, 'average_filter'] = idle
+            df.loc[row, 'label'] = idle
             continue
         if (r - r1) > (n - n1) + offset and (r - r1) - (n - n1) > threshold:
-            df.loc[row, 'average_filter'] = on
+            df.loc[row, 'label'] = on
         elif (r1 - r) > (n1 - n) + offset and (r1 - r) - (n1 - n) > threshold:
-            df.loc[row, 'average_filter'] = off
-
+            df.loc[row, 'label'] = off
         else:
-            df.loc[row, 'average_filter'] = idle
+            df.loc[row, 'label'] = idle
 
-    # plot
-    fig = px.line(df, y=['light', 'average_filter', 'average'])
+# plot
+    fig = px.line(df, x=['date_time'], y=['light_data', 'label', 'average'])
     fig.update_xaxes(rangeslider_visible=True)
     fig.show(renderer='browser')
 
-    # save to csv
+# save to csv
     df.to_csv(f"test_result/{basename}", index=False)
 
